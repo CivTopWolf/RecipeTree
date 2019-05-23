@@ -18,6 +18,30 @@ class RecipeTree {
     this.items = {}; // { "item_key": { key, recipeSources, material, ?durability, ?lore:[str], ?name, ?amount } }
   }
 
+  /*
+   * rcpSource - Recipe source. Should have the following shape:
+   *
+   *  factories:
+   *    FACTORY_KEY_1:
+   *      recipes
+   *        - RECIPE_KEY_1
+   *        - RECIPE_KEY_2
+   *    FACTORY_KEY_2:
+   *      recipes
+   *        - RECIPE_KEY_3
+   *        - RECIPE_KEY_4
+   *  recipes:
+   *    RECIPE_KEY_1
+   *      type:
+   *      input:
+   *        MATERIAL_1:
+   *          material: COBBLESTONE
+   *          amount: 64
+   *      output:
+   *        MATERIAL_2:
+   *          material: STONE
+   *          amount: 96
+   */
   addRecipeSource(rcpSrc) {
     this.rcpSources.push(rcpSrc);
     Object.assign(this.factories, rcpSrc.factories);
@@ -40,7 +64,12 @@ class RecipeTree {
 
     for (let rcpKey in this.recipes) {
       const rcp = this.recipes[rcpKey];
-      if (rcp.type === 'UPGRADE') {
+      // Ignore downgrade recipes
+      const words = rcp.name.split(" ");
+      if (words[0] === 'Downgrade') {
+        continue;
+      }
+      if (rcp.type === 'UPGRADE' && rcp.name.split(" ")[0] !== 'Downgrade') {
         const resultingFactory = Object.values(this.factories).find(f => f.name === rcp.factory);
         if (resultingFactory.upgradeRecipe) {
           throw new Error(`upgradeRecipe already set for ${stringifyShallow(rcp.factory)}: ${stringifyShallow(resultingFactory.upgradeRecipe)}`);
